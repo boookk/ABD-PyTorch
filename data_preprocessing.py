@@ -75,4 +75,4 @@ if __name__ == '__main__':
                         save_frame(classes[idx], save_dir, start, duration, args.size)
                         break
             except Exception as e:
-                print(e, xml)
+                print(e)
