@@ -14,6 +14,6 @@ conda create -n abd python=3.8
 
 ## 2. Git clone
 ```shell
-git clone
+git clone https://github.com/boookk/ABD-PyTorch.git
 ```
 
