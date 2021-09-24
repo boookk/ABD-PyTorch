@@ -47,7 +47,7 @@ cd ABD-PyTorch
 python main.py
 ```
 
-### 4.Demo (Webcam)
+### 4. Demo (Webcam)
 ```shell
 python demo/demo.py
 ```
