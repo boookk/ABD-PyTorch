@@ -1,5 +1,9 @@
 # Abnormal-behavior-detection-system-using-CCTV-based-on-deep-learning
 
+## Summary
+
+본 레퍼지토리는 대학교 '캡스톤디자인' 과목에서 수행하고 있는 프로젝트
+
 ## Environment
 - Ubuntu 20.04 LTS
 - CUDA 10.2
