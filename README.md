@@ -28,11 +28,27 @@
 
 ### 1. Conda
 ```shell
-conda create -n abd python=3.8
+conda create -n ABD python=3.8
+```
+```shell
+conda activate ABD
 ```
 
 ### 2. Git clone
 ```shell
 git clone https://github.com/boookk/ABD-PyTorch.git
+```
+```shell
+cd ABD-PyTorch
+```
+
+### 3. Training
+```shell
+python main.py
+```
+
+### 4.Demo (Webcam)
+```shell
+python demo/demo.py
 ```
 
