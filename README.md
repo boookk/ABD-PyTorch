@@ -23,6 +23,12 @@
 <img src="https://user-images.githubusercontent.com/76933244/134613782-b04d2890-7b1a-4c3d-9dbc-41f272b813b6.png" width="500" height="400"> 
 
 
+## model
+- [3D ResNets](https://github.com/kenshohara/3D-ResNets-PyTorc
+
+사람의 행동을 인식하기 위해서는 공간적인 요소뿐만 아니라, 시간적인 요소도 고려해야 한다. 그렇기 때문에 3D ResNets을 활용하여 모델에 입력으로 시퀀스를 사용한다. 
+
+
 
 ## Process
 
