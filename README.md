@@ -48,12 +48,17 @@ git clone https://github.com/boookk/ABD-PyTorch.git
 cd ABD-PyTorch
 ```
 
-### 3. Training
+### 3. Data pre-processing
+```shell
+python data/video2image.py
+```
+
+### 4. Training
 ```shell
 python main.py
 ```
 
-### 4. Demo (Webcam)
+### 5. Demo (Webcam)
 ```shell
 python demo/demo.py
 ```
