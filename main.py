@@ -1,92 +1,92 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader
 import torch.backends.cudnn as cudnn
 
 import argparse
 from tqdm import tqdm
 from pathlib import Path
 
-from model import generate_model
-from dataset import AbnormalDataset
+from model import ResNet
+from ucf_dataset import AbnormalDataset
 
 
 cudnn.enabled = True
 cudnn.benchmark = True
 
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def calculate_accuracy(outputs, targets):
+    with torch.no_grad():
+        batch_size = targets.size(0)
+
+        _, pred = outputs.topk(1, 1, largest=True, sorted=True)
+        pred = pred.t()
+        correct = pred.eq(targets.view(1, -1))
+        n_correct_elems = correct.float().sum().item()
+
+        return n_correct_elems / batch_size
+
+
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', default='/home/bobo/png/', type=Path, help='path of video')
-    parser.add_argument('--size', default=224, type=int, help='image size')
+    parser.add_argument('--model', default='./r3d18_KM_200ep.pth', type=str, help='pretrained model')
     parser.add_argument('--n_classes', default=2, type=int, help='num of class')
-    parser.add_argument('--frame_size', default=16, type=int)
+    parser.add_argument('--clip_len', default=16, type=int)
     parser.add_argument('--checkpoint', default='./checkpoint', type=Path)
-    parser.add_argument('--save_epoch', default=10, type=int)
+    parser.add_argument('--save_epoch', default=100, type=int)
     parser.add_argument('--n_epochs', default=100, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
 
     return parser.parse_args()
 
 
-def get_count(dataset):
-    cnt = [0] * 2
-    labels = []
-    for i, inputs in enumerate(dataset):
-        x, y = inputs
-        cnt[y] += 1
-        labels.append(y)
-
-    return sum(cnt), cnt
-  
-
 if __name__ == '__main__':
     args = get_args()
 
-    datasets = AbnormalDataset(args.data, args.frame_size, args.size)
+    train_loader = DataLoader(AbnormalDataset('/home/bobo/output/detection/train', split='train', clip_len=16), batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(AbnormalDataset('/home/bobo/output/detection/test', split='test', clip_len=16), batch_size=args.batch_size, pin_memory=True)
 
-    train_size = int(len(datasets) * 0.8)
-    test_size = len(datasets) - train_size
-    train_dataset, test_dataset = random_split(datasets, [train_size, test_size])
-
-    # train, test class 별로 데이터 갯수 카운
-    print(f'Train: {get_count(train_dataset)}')
-    print(f'Test: {get_count(test_dataset)}')
-
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, pin_memory=True)
-
-    model = generate_model(n_classes=args.n_classes)
-
-    # Using GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    model = ResNet()
+    model.load_state_dict(torch.load(args.model)['state_dict'])
+    model.fc = nn.Linear(model.fc.in_features, args.n_classes)
+    model = nn.DataParallel(model, device_ids=None).cuda()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 
     model.train()
     for epoch in tqdm(range(args.n_epochs)):
-        running_loss = 0.0
-        for i, (inputs, targets) in enumerate(train_loader):
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+        for i, (inputs, labels) in enumerate(train_loader):
+            inputs = inputs.cuda()
+            labels = labels.cuda()
 
             optimizer.zero_grad()
 
             outputs = model(inputs)
-
-            loss = criterion(outputs, targets)
+            loss = criterion(outputs, labels)
 
             loss.backward()
             optimizer.step()
-
-            running_loss += loss.item()
-
-        else:
-            print('Epochs : {}/{{}\t'
-                  'Training loss: {:.2f}'.format(epoch+1, args.n_epochs, running_loss / len(train_loader)))
 
         if epoch % args.save_epoch == args.save_epoch - 1:
             if not args.checkpoint.exists():
@@ -95,16 +95,18 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), save_file)
 
     model.eval()
-    correct = 0.0
+    losses = AverageMeter()
+    accuracies = AverageMeter()
     with torch.no_grad():
-        for k, (inputs, targets) in enumerate(test_loader):
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+        for inputs, labels in test_loader:
+            inputs = inputs.cuda()
+            labels = labels.cuda()
 
             outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            acc = calculate_accuracy(outputs, labels)
 
-            _, predicted = torch.max(outputs, 1)
-            correct += torch.sum(predicted == targets.data)
+            losses.update(loss.item(), inputs.size(0))
+            accuracies.update(acc, inputs.size(0))
 
-    epoch_acc = 100 * correct / len(test_loader.dataset)
-    print('Test Accuracy : {:.2f}%'.format(epoch_acc))
+        print("[test] Epoch: {} Loss: {:.4f} Acc: {:.4f}".format(args.n_epochs, losses.avg, accuracies.avg))
