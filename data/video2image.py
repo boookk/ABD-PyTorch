@@ -1,69 +1,92 @@
-import os
 import argparse
-import xml.etree.ElementTree as elemTree
-import subprocess
-from tqdm import tqdm
 from pathlib import Path
+import cv2
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', default='/home/bobo/datas/', type=Path, help='path of video')
-    parser.add_argument('--save_dir', default='/home/bobo/png', type=Path, help='Directory Path to save the image')
+    parser.add_argument('--data', default='/home/bobo/ucf_crime', type=Path, help='path of video')
+    parser.add_argument('--save_dir', default='/home/bobo/output', type=Path, help='path of save image')
     parser.add_argument('--size', default=224, type=int, help='image size')
-    parser.add_argument('--class', default=2, type=int, help='num of class')
+    parser.add_argument('--n_classes', default=2, type=int, help='num of class')
+    parser.add_argument('--clip_len', default=16, type=int)
 
     return parser.parse_args()
 
 
-def get_list(dir_path):
-    videos = []
-    for path, dir, files in os.walk(dir_path):
-        for filename in files:
-            if filename.endswith('.mp4'):
-                videos.append(os.path.join(path, filename))
+def process_video(video, action_name, save_dir):
+    video_name = video.name.split('.')[0]
+    resize_height = 320
+    resize_width = 240
 
-    return sorted(videos)
-
-
-def save_frame(c, videoname, save_dir, s, d, size):
-    save_ = save_dir / c / videoname
-    if not os.path.exists(save_):
-        os.makedirs(save_)
-
-    if s == 0:
-        cmd = ['ffmpeg', '-t', d, '-i', video, '-s', f'{size}*{size}',
-               f'{save_}/img_%06d.png']
+    if 'Normal' in action_name:
+        save_dir = save_dir / 'Normal'
     else:
-        cmd = ['ffmpeg', '-ss', s, '-t', d, '-i', video, '-s', f'{size}*{size}',
-               f'{save_}/img_%06d.png']
+        save_dir = save_dir / 'Anomaly'
+    save_dir = save_dir / video_name
+    if not save_dir.exists():
+        save_dir.mkdir(parents=True)
 
-    subprocess.run(cmd, capture_output=True)
+    capture = cv2.VideoCapture(str(video))
+
+    frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    EXTRACT_FREQUENCY = 4
+    if frame_count // EXTRACT_FREQUENCY <= 16:
+        EXTRACT_FREQUENCY -= 1
+        if frame_count // EXTRACT_FREQUENCY <= 16:
+            EXTRACT_FREQUENCY -= 1
+            if frame_count // EXTRACT_FREQUENCY <= 16:
+                EXTRACT_FREQUENCY -= 1
+
+    count = 0
+    i = 0
+    retaining = True
+
+    while count < frame_count and retaining:
+        retaining, frame = capture.read()
+        if frame is None:
+            continue
+
+        if count % EXTRACT_FREQUENCY == 0:
+            if (frame_height != resize_height) or (frame_width != resize_width):
+                frame = cv2.resize(frame, (resize_width, resize_height))
+            cv2.imwrite(filename=str(save_dir / '0000{}.jpg'.format(str(i))), img=frame)
+            i += 1
+        count += 1
+
+    capture.release()
 
 
 if __name__ == '__main__':
-    classes = ['swoon']
     args = get_args()
-    videos = get_list(args.data)
-    fail = 0
 
-    for i, video in enumerate(tqdm(videos)):
-        xml = video.replace('.mp4', '.xml')
+    train_dir = args.save_dir / 'train'
+    test_dir = args.save_dir / 'test'
 
-        try:
-            tree = elemTree.parse(xml)
-            videoname = tree.find('./filename').text[:-4]
-            event = tree.find('./event')
-            start = event.find('./starttime').text
-            duration = event.find('./duration').text
+    if not train_dir.exists():
+        train_dir.mkdir(parents=True)
+    if not test_dir.exists():
+        test_dir.mkdir(parents=True)
 
-            for idx in range(len(classes)):
-                if classes[idx] in videoname:
-                    save_frame('normal', videoname, args.save_dir, 0, start, args.size)
-                    save_frame(classes[idx], videoname, args.save_dir, start, duration, args.size)
-                    break
-        except Exception as e:
-            fail += 1
-            print(e)
+    with open('/home/bobo/ucf_crime/Anomaly_Train.txt', 'r') as f:
+        train_list = f.read().split('\n')
 
-    print(f'Data preprocessing completed.\t{len(videos)-fail} \\ {len(videos)}')
+    with open('/home/bobo/ucf_crime/Anomaly_Test.txt', 'r') as f:
+        test_list = f.read().split('\n')
+
+    for train_ in train_list:
+        if not train_.endswith('.mp4'):
+            continue
+        video = args.data / train_
+        if video.exists():
+            process_video(video, video.parent.name, train_dir)
+
+    for test_ in test_list:
+        if not test_.endswith('.mp4'):
+            continue
+        video = args.data / test_
+        if video.exists():
+            process_video(video, video.parent.name, test_dir)
