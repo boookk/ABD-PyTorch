@@ -101,16 +101,16 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
 
     def __init__(self,
-                 block,
-                 layers,
-                 block_inplanes,
+                 block=BasicBlock,
+                 layers=[2, 2, 2, 2],
+                 block_inplanes=get_inplanes(),
                  n_input_channels=3,
                  conv1_t_size=7,
                  conv1_t_stride=1,
                  no_max_pool=False,
                  shortcut_type='B',
                  widen_factor=1.0,
-                 n_classes=400):
+                 n_classes=1039):
         super().__init__()
 
         block_inplanes = [int(x * widen_factor) for x in block_inplanes]
@@ -208,10 +208,5 @@ class ResNet(nn.Module):
 
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
+        
         return x
-
-
-def generate_model(**kwargs):
-    model = ResNet(BasicBlock, [2, 2, 2, 2], get_inplanes(), **kwargs)
-    return model
