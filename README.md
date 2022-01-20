@@ -6,7 +6,10 @@
 본 레퍼지토리는 대학교 졸업작품으로 진행한 프로젝트입니다.
 
 #### 1. 전체 구성도  
-![model](https://user-images.githubusercontent.com/76933244/150387942-1a7517a0-8359-48b5-9956-b8024acb1eb1.png)
+<center>
+  <img src="https://user-images.githubusercontent.com/76933244/150387942-1a7517a0-8359-48b5-9956-b8024acb1eb1.png" width="380" height="600">
+</center>
+
 
 #### 2. 결과  
 ![demo](https://user-images.githubusercontent.com/76933244/144737136-c668c095-44c0-4b45-a57f-755f608aa142.gif)
