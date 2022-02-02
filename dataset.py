@@ -89,7 +89,7 @@ class AbnormalDataset(Dataset):
 
         return clip
 
-
+# Test code
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
     train_data = AbnormalDataset(data_path='/Change/Dataset/path/train', split='train', clip_len=16)
