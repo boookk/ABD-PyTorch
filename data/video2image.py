@@ -19,6 +19,7 @@ def process_video(video, action_name, save_dir):
     resize_height = 320
     resize_width = 240
 
+    # Create a class directory to store the converted data.
     if 'Normal' in action_name:
         save_dir = save_dir / 'Normal'
     else:
@@ -33,6 +34,7 @@ def process_video(video, action_name, save_dir):
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    # 해당 비디오가 16프레임 미만일 경우
     EXTRACT_FREQUENCY = 4
     if frame_count // EXTRACT_FREQUENCY <= 16:
         EXTRACT_FREQUENCY -= 1
@@ -71,20 +73,24 @@ if __name__ == '__main__':
     if not test_dir.exists():
         test_dir.mkdir(parents=True)
 
-    with open('/home/bobo/ucf_crime/Anomaly_Train.txt', 'r') as f:
+    # Annotation file provided by the dataset.
+    with open('/ANNOTATION/PATH/Anomaly_Train.txt', 'r') as f:
         train_list = f.read().split('\n')
-
-    with open('/home/bobo/ucf_crime/Anomaly_Test.txt', 'r') as f:
+    with open('/ANNOTATION/PATH/Anomaly_Test.txt', 'r') as f:
         test_list = f.read().split('\n')
 
+    # Based on the training data..
     for train_ in train_list:
+        # Verify that the file type is mp4.
         if not train_.endswith('.mp4'):
             continue
         video = args.data / train_
         if video.exists():
             process_video(video, video.parent.name, train_dir)
 
+    # Based on the testing data..
     for test_ in test_list:
+        # Verify that the file type is mp4.
         if not test_.endswith('.mp4'):
             continue
         video = args.data / test_
