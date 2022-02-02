@@ -10,7 +10,16 @@ import skimage.io as io
 from skimage.transform import resize
 
 
+
 class AbnormalDataset(Dataset):
+    """
+    Dataset 재정의
+    
+    Arg:
+        data_path: The directory path where the data is stored.
+        split: train or test
+        clip_len: The number of clips.
+    """
 
     def __init__(self, data_path, split='train', clip_len=16):
         self.path = Path(data_path)
@@ -71,10 +80,11 @@ class AbnormalDataset(Dataset):
         clip = sorted(list(Path(file_dir).glob('**/*.jpg')))
         time_index = np.random.randint(len(clip) - self.clip_len)
         clip = clip[time_index:time_index + self.clip_len]
-
+        
+        # Change the size of the image and save it in the niwifi arrangement.
         clip = np.array([resize(io.imread(str(frame)), output_shape=(112, 200), preserve_range=True).astype(np.float64) for frame in clip]).astype(np.float32)
 
-        # center crop
+        # center crop.
         clip = clip[:, :, 44:44 + 112, :]
 
         return clip
@@ -82,8 +92,8 @@ class AbnormalDataset(Dataset):
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
-    train_data = AbnormalDataset(data_path='/home/bobo/output/detection/train', split='train', clip_len=16)
-    test_data = AbnormalDataset(data_path='/home/bobo/output/detection/test', split='test', clip_len=16)
+    train_data = AbnormalDataset(data_path='/Change/Dataset/path/train', split='train', clip_len=16)
+    test_data = AbnormalDataset(data_path='/Change/Dataset/path/test', split='test', clip_len=16)
     train_loader = DataLoader(train_data, batch_size=32, shuffle=True, num_workers=0)
 
     for i, sample in enumerate(train_loader):
