@@ -92,8 +92,8 @@ class AbnormalDataset(Dataset):
 # Test code
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
-    train_data = AbnormalDataset(data_path='/Change/Dataset/path/train', split='train', clip_len=16)
-    test_data = AbnormalDataset(data_path='/Change/Dataset/path/test', split='test', clip_len=16)
+    train_data = AbnormalDataset(data_path='/DATASET/PATH/train', split='train', clip_len=16)
+    test_data = AbnormalDataset(data_path='/DATASET/PATH/test', split='test', clip_len=16)
     train_loader = DataLoader(train_data, batch_size=32, shuffle=True, num_workers=0)
 
     for i, sample in enumerate(train_loader):
