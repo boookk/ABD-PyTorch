@@ -13,7 +13,7 @@ from model import generate_model
 class abd_model():
     def __init__(self):
         self.n_classes = 2
-        self.model_path = '/home/bobo/ABD-PyTorch/checkpoint/30.pth'
+        self.model_path = '/CHECKPOINT/PATH/30.pth'
         self.class_name = self.get_class()
         self.model = self.get_model()
         self.transform = self.get_transform()
@@ -22,6 +22,7 @@ class abd_model():
     def get_model(self):
         model = generate_model(n_classes=self.n_classes)
         
+        # Load the trained model.
         load_params = torch.load(self.model_path)
         new_params = model.state_dict().copy()
         for j in load_params:
@@ -31,17 +32,20 @@ class abd_model():
             else:
                 new_params[j] = load_params[j]
         model.load_state_dict(new_params)
-
+        
+        # Using multi gpu
         if torch.cuda.device_count() > 0 and torch.cuda.is_available():
             model = nn.DataParallel(model).cuda()
 
         return model
 
-    def get_class(self):
-        ############################################
-        class_names = ['normal', 'swoon']
-        ###########################################
-        return class_names
+    def get_class(self, class_names = ['normal', 'swoon']):
+        """
+        Arg:
+            class_names(list): Name of the class you want to classify.
+        """
+        names = class_names
+        return names
 
     def get_transform(self):
         transform = transforms.Compose([
@@ -60,6 +64,7 @@ class abd_model():
         return clip
 
     def relation_recognition(self):
+        # If it is more than 16 frames, the inference proceeds and the result is returned.
         if len(self.clip) == 16:
             self.model.eval()
             clip = self.preprocessing(self.clip)
