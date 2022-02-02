@@ -4,12 +4,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+"""
+.. _Sources:
+    https://github.com/kenshohara/3D-ResNets-PyTorch
+"""
 
 def get_inplanes():
     return [64, 128, 256, 512]
 
 
 def conv3x3x3(in_planes, out_planes, stride=1):
+    """3x3x3 convolution"""
     return nn.Conv3d(in_planes,
                      out_planes,
                      kernel_size=3,
@@ -19,6 +24,7 @@ def conv3x3x3(in_planes, out_planes, stride=1):
 
 
 def conv1x1x1(in_planes, out_planes, stride=1):
+    """1x1x1 convolution"""
     return nn.Conv3d(in_planes,
                      out_planes,
                      kernel_size=1,
