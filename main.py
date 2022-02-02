@@ -63,17 +63,21 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
 
-    train_loader = DataLoader(AbnormalDataset('/home/bobo/output/detection/train', split='train', clip_len=16), batch_size=args.batch_size, shuffle=True)
-    test_loader = DataLoader(AbnormalDataset('/home/bobo/output/detection/test', split='test', clip_len=16), batch_size=args.batch_size, pin_memory=True)
+    train_loader = DataLoader(AbnormalDataset('/DATASET/PATH/train', split='train', clip_len=16), batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(AbnormalDataset('/DATASET/PATH/test', split='test', clip_len=16), batch_size=args.batch_size, pin_memory=True)
 
+    # Load the trained model and change the FC layer.
     model = ResNet()
     model.load_state_dict(torch.load(args.model)['state_dict'])
     model.fc = nn.Linear(model.fc.in_features, args.n_classes)
+    
+    # Using multi gpu
     model = nn.DataParallel(model, device_ids=None).cuda()
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 
+    """ Train """
     model.train()
     for epoch in tqdm(range(args.n_epochs)):
         for i, (inputs, labels) in enumerate(train_loader):
@@ -93,7 +97,8 @@ if __name__ == '__main__':
                 args.checkpoint.mkdir()
             save_file = args.checkpoint / f'{epoch + 1}.pth'
             torch.save(model.state_dict(), save_file)
-
+    
+    """ Test """
     model.eval()
     losses = AverageMeter()
     accuracies = AverageMeter()
