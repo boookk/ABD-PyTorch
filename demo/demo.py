@@ -4,6 +4,7 @@ from abd_model import abd_model
 
 
 def text_in_frame(img, relation):
+    # Put text in the screen.
     x, y = [10, 20]
     img = cv2.putText(img, f"{relation}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
@@ -17,10 +18,8 @@ if __name__ == '__main__':
     if not cap.isOpened():
         raise IOError("We cannot open webcam.")
 
-    ############################
-    # 모델 불러오기
+    # Loading models.
     model = abd_model()
-    ############################
 
     relation = None
 
